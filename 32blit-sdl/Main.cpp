@@ -33,6 +33,7 @@ Renderer *blit_renderer;
 Audio *blit_audio;
 
 const char *launch_path = nullptr;
+SDL_Joystick *sdl_joy = nullptr;
 
 #ifdef VIDEO_CAPTURE
 VideoCapture *blit_capture;
@@ -44,7 +45,13 @@ void handle_event(SDL_Event &event) {
 		case SDL_QUIT:
 			running = false;
 			break;
+		//case SDL_JOYAXISMOTION:
+		//	break;
 
+		//case SDL_JOYBUTTONDOWN:
+		//	printf("BUTTON %X\n", event.jbutton.button);
+		//	break;
+			
 		case SDL_WINDOWEVENT:
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				blit_renderer->resize(event.window.data1, event.window.data2);
@@ -78,9 +85,18 @@ void handle_event(SDL_Event &event) {
 			}
 			break;
 
+		case SDL_JOYBUTTONDOWN:
+		case SDL_JOYBUTTONUP:
+			blit_input->handle_controller_button(event.jbutton.button, event.type == SDL_JOYBUTTONDOWN);
+			break;
+
 		case SDL_CONTROLLERBUTTONDOWN:
 		case SDL_CONTROLLERBUTTONUP:
 			blit_input->handle_controller_button(event.cbutton.button, event.type == SDL_CONTROLLERBUTTONDOWN);
+			break;
+
+		case SDL_JOYAXISMOTION:
+			blit_input->handle_controller_motion(event.jaxis.axis, event.jaxis.value);
 			break;
 
 		case SDL_CONTROLLERAXISMOTION:
@@ -211,11 +227,28 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO) < 0) {
+	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK) < 0) {
 		std::cerr << "could not initialize SDL2: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
+	// Check for joystick
+	if(SDL_NumJoysticks()>0)
+	{
+		// Open joystick
+		sdl_joy=SDL_JoystickOpen(0);
+		
+		if(sdl_joy)
+		{
+			printf("Opened Joystick 0\n");
+			printf("Name: %s\n", SDL_JoystickName(0));
+			printf("Number of Axes: %d\n", SDL_JoystickNumAxes(sdl_joy));
+			printf("Number of Buttons: %d\n", SDL_JoystickNumButtons(sdl_joy));
+			printf("Number of Balls: %d\n", SDL_JoystickNumBalls(sdl_joy));
+		}
+		else
+			printf("Couldn't open Joystick 0\n");		
+	}
 	window = SDL_CreateWindow(
 		metadata_title,
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -275,6 +308,10 @@ int main(int argc, char *argv[]) {
 	delete blit_multiplayer;
 	delete blit_renderer;
 
+	if (sdl_joy != nullptr)
+	{
+		SDL_JoystickClose(sdl_joy);
+	}
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	return 0;

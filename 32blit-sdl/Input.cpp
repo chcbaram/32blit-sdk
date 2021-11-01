@@ -37,6 +37,7 @@ std::map<int, int> Input::keys = {
 };
 
 std::map<int, int> Input::buttons = {
+	#if 0
 	// dpad
 	{SDL_CONTROLLER_BUTTON_DPAD_DOWN,   blit::Button::DPAD_DOWN},
 	{SDL_CONTROLLER_BUTTON_DPAD_UP,     blit::Button::DPAD_UP},
@@ -53,6 +54,23 @@ std::map<int, int> Input::buttons = {
 	{SDL_CONTROLLER_BUTTON_BACK,        blit::Button::HOME},
 	{SDL_CONTROLLER_BUTTON_START,       blit::Button::MENU},
 	{SDL_CONTROLLER_BUTTON_LEFTSTICK,   blit::Button::JOYSTICK},
+#else
+	// dpad
+	{0x09,  blit::Button::DPAD_DOWN},
+	{0x08,  blit::Button::DPAD_UP},
+	{0x0A,  blit::Button::DPAD_LEFT},
+	{0x0B,  blit::Button::DPAD_RIGHT},
+
+	// action buttons
+	{0x01,  blit::Button::A},
+	{0x00,  blit::Button::B},
+	{0x02,  blit::Button::X},
+	{0x03,  blit::Button::Y},
+
+	// system buttons
+	{0x05,  blit::Button::HOME},
+	{0x04,  blit::Button::MENU},	
+#endif
 };
 
 int Input::find_key(int key) {
@@ -111,6 +129,7 @@ bool Input::handle_controller_button(int button, bool state) {
 	return false;
 }
 
+#if 0
 bool Input::handle_controller_motion(int axis, int value) {
 	float fvalue = value / 32768.0f;
 	switch(axis) {
@@ -131,6 +150,14 @@ bool Input::handle_controller_motion(int axis, int value) {
 	}
 	return false;
 }
+#else
+bool Input::handle_controller_motion(int axis, int value) {
+	float fvalue = value / 32768.0f;
+
+	target->set_joystick(axis, fvalue);
+	return true;
+}
+#endif
 
 void Input::_virtual_tilt(int x, int y, int half_w, int half_h) {
 	float z = 80.0f;
